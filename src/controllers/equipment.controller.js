@@ -44,6 +44,32 @@ var controller = {
         }
     },
 
+    // Get an equipment by id
+    getEquipment: async function(req, res) {
+        try {
+            //Take Params
+            var equipment = new equipmentSchema();
+            var params = req.body;
+            const equipmentId = params.equipmentId;
+
+            //Check if the equipment already exists
+            const existingEquipment = await equipmentSchema.findById(equipmentId);
+            if (!existingEquipment) {
+                return res.status(409).send({
+                    message: 'Equipment does not exists',
+                });
+            }
+            return res.status(200).send({
+                existingEquipment,
+            });
+        } catch (error) {
+            return res.status(500).send({
+                message: 'Error getting equipment',
+                error: error
+            });
+        }
+    },
+
     // Get all equipments
     getEquipments: async function(req, res) {
         try {
@@ -61,7 +87,7 @@ var controller = {
     },
 
     //Modify an equipment
-    modifyEquipment: async function(req, res) {
+    updateEquipment: async function(req, res) {
         try {
             //Take Params
             var equipment = new equipmentSchema();
@@ -109,6 +135,37 @@ var controller = {
             });
         }
     },
+
+    //Delete an equipment
+    deleteEquipment: async function(req, res) {
+        try {
+            
+            //Take Params
+            var params = req.body;
+            const equipmentId = params.equipmentId;
+
+            //Check if the equipment already exists
+            // and delete the equipment
+            const deletedEquipment = await equipmentSchema.findById(equipmentId);
+            if (!deletedEquipment) {
+                return res.status(409).send({
+                    message: 'Equipment does not exists',
+                });
+            }
+
+            await equipmentSchema.deleteOne({ _id: equipmentId });
+
+            return res.status(200).send({
+                message: 'Equipment deleted successfully',
+            });
+        
+        } catch (error) {
+            return res.status(500).send({
+                message: 'Error deleting equipment',
+                error: error
+            });
+        }
+    }
 }
 
 module.exports = controller;

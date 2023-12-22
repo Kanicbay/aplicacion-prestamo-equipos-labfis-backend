@@ -30,6 +30,11 @@ var EquipmentSchema = Schema({
         type: String,
         required: true,
     },
+    photo: {
+        type: String,
+        required: false,
+        default: '',
+    },
     qrCode: {
         type: String,
         required: false,
