@@ -6,7 +6,7 @@ const server = express();
 
 //Routes
 const equipmentRoutes = require('./routes/equipment.routes');
-
+const userRoutes = require('./routes/user.routes');
 
 //Server configurations
 server.use(bodyParser.urlencoded({extended: false}));
@@ -21,4 +21,5 @@ server.use((req, res, next, err) => {
 
 //
 server.use('/equipment', equipmentRoutes);
+server.use('/user', userRoutes);
 module.exports = server;

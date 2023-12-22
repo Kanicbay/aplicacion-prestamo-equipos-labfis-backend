@@ -2,7 +2,7 @@
 const e = require('express');
 var equipmentSchema = require('../models/equipment');
 
-var controller = {
+var equipmentController = {
     // Add an equipment
     addEquipment: async function(req, res) {
         try {
@@ -168,4 +168,4 @@ var controller = {
     }
 }
 
-module.exports = controller;
+module.exports = equipmentController;
