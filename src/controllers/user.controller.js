@@ -3,37 +3,34 @@ const e = require('express');
 var userSchema = require('../models/user');
 
 var userController = {
-    //Create and update users into the database according to the data received from ldap
+    //Update users into the database according to the data received from ldap
     updateUsers: async function(req, res) {
         try {
-            //Take user data from ldap, assuming that the data is received in the following format: javascript object
+            //Take user data from Active Directory, assuming that the data is received in the following format: javascript object
             var ldapUsers = req.body;
-            //For each user in ldapUsers, create or update the user in the database
+            //Update de database with users from Active Directory, only those who do not exist in the database.
+            //user data is assuming to be received in the following format: javascript object 
             ldapUsers.forEach(async function(ldapUser) {
                 //Check if the user already exists
                 const existingUser = await userSchema.findOne({
-                    institucionalEmail: ldapUser.institucionalEmail,
+                    identificationCard: ldapUser.identificationCard,
                 });
                 if (!existingUser) {
                     //Create the user
                     var user = new userSchema();
                     user.fullName = ldapUser.fullName;
                     user.photo = ldapUser.photo;
-                    user.institucionalEmail = ldapUser.institucionalEmail;
+                    user.institutionalEmail = ldapUser.institutionalEmail;
+                    user.identificationCard = ldapUser.identificationCard;
                     await user.save();
-                } else {
-                    //Update the user
-                    existingUser.fullName = ldapUser.fullName;
-                    existingUser.photo = ldapUser.photo;
-                    await existingUser.save();
                 }
             });
             return res.status(200).send({
-                message: 'Users updated successfully',
+                message: 'Database updated successfully',
             });
         } catch (error) {
             return res.status(500).send({
-                message: 'Error updating users',
+                message: 'Error updating database',
                 error: error
             });
         }

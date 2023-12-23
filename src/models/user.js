@@ -11,13 +11,16 @@ var UserSchema = Schema({
         type: String,
         required: false,
         default: '',
-    
     },
-    institucionalEmail : {
+    institutionalEmail : {
         type: String,
         required: true,
         unique: true,
     },
+    identificationCard: {
+        type: String,
+        required: true,
+    }
 });
 
 module.exports = mongoose.model('User', UserSchema);
