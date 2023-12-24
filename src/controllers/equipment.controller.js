@@ -1,5 +1,4 @@
 'use strict'
-const e = require('express');
 var equipmentSchema = require('../models/equipment');
 
 var equipmentController = {

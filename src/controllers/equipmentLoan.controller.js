@@ -1,5 +1,6 @@
 'use strict'
 var userSchema = require('../models/user');
+var equipmentSchema = require('../models/equipment');
 
 var userController = {
     //Update users into the database according to the data received from ldap
