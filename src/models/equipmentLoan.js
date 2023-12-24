@@ -22,11 +22,15 @@ var EquipmentLoanSchema = Schema({
     },
     loanStartDate: {
         type: Date,
-        required: true,
+        required: false,
     },
     loanReturnDate: {
         type: Date,
         required: true,
+    },
+    loanFinishDate: {
+        type: Date,
+        required: false,
     },
     loanStatus: {
         type: String,
