@@ -16,6 +16,7 @@ var equipmentController = {
             equipment.model = params.model;
             equipment.category = params.category;
             equipment.qrCode = params.qrCode;
+            equipment.description = params.description;
             equipment.status = params.status;
 
             //Check if the equipment already exists
@@ -48,7 +49,6 @@ var equipmentController = {
     getEquipment: async function(req, res) {
         try {
             //Take Params
-            var equipment = new equipmentSchema();
             var params = req.body;
             const equipmentId = params.equipmentId;
 
@@ -98,6 +98,7 @@ var equipmentController = {
             equipment.equipmentNumber = params.equipmentNumber;
             equipment.model = params.model;
             equipment.category = params.category;
+            equipment.description = params.description;
             equipment.qrCode = params.qrCode;
             equipment.status = params.status;
 
@@ -122,6 +123,7 @@ var equipmentController = {
                     model: equipment.model,
                     category: equipment.category,
                     qrCode: equipment.qrCode,
+                    description: equipment.description,
                     status: equipment.status,
                 }
             });

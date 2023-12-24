@@ -35,6 +35,10 @@ var EquipmentSchema = Schema({
         required: false,
         default: '',
     },
+    description: {
+        type: String,
+        required: true,
+    },
     qrCode: {
         type: String,
         required: false,

@@ -7,22 +7,30 @@ var userController = {
     updateUsers: async function(req, res) {
         try {
             //Take user data from Active Directory, assuming that the data is received in the following format: javascript object
-            var ldapUsers = req.body;
+            var adUsers = req.body;
             //Update de database with users from Active Directory, only those who do not exist in the database.
             //user data is assuming to be received in the following format: javascript object 
-            ldapUsers.forEach(async function(ldapUser) {
+            adUsers.forEach(async function(adUser) {
                 //Check if the user already exists
                 const existingUser = await userSchema.findOne({
-                    identificationCard: ldapUser.identificationCard,
+                    identificationCard: adUser.identificationCard,
                 });
                 if (!existingUser) {
                     //Create the user
                     var user = new userSchema();
-                    user.fullName = ldapUser.fullName;
-                    user.photo = ldapUser.photo;
-                    user.institutionalEmail = ldapUser.institutionalEmail;
-                    user.identificationCard = ldapUser.identificationCard;
+                    user.fullName = adUser.fullName;
+                    user.photo = adUser.photo;
+                    user.institutionalEmail = adUser.institutionalEmail;
+                    user.identificationCard = adUser.identificationCard;
+                    user.rol = adUser.rol;
+                    //Save the user
                     await user.save();
+                } else {
+                    //Update the user data
+                    //The only user data that can be updated is the rol
+                    existingUser.rol = adUser.rol;
+                    //Save the user
+                    await existingUser.save();
                 }
             });
             return res.status(200).send({

@@ -20,7 +20,12 @@ var UserSchema = Schema({
     identificationCard: {
         type: String,
         required: true,
-    }
+        unique: true,
+    },
+    rol: {
+        type: String,
+        required: true,
+    },
 });
 
 module.exports = mongoose.model('User', UserSchema);
