@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var EquipmentSchema = Schema({
-    equipmentCode: {
+    equipmentId: {
         type: String,
         required: true,
         unique: true,
@@ -30,11 +30,20 @@ var EquipmentSchema = Schema({
         type: String,
         required: true,
     },
-    photo: {
-        type: String,
-        required: false,
-        default: '',
-    },
+    photos: [{
+        photo: {
+            type: String,
+            required: true,
+        },
+        name: {
+            type: String,
+            required: true,
+        },
+        type: {
+            type: String,
+            required: true,
+        },
+    }],
     description: {
         type: String,
         required: true,

@@ -1,144 +1,99 @@
 'use strict'
 var equipmentSchema = require('../models/equipment');
-var qrCode = require('qrcode');
 var fs = require('fs').promises;
-var path = require('path');
+var qrCode = require('qrcode');
+const { v4: uuidv4 } = require('uuid');
+
+const formidable = require('formidable');
 
 var equipmentController = {
-    // Add an equipment
+    
     addEquipment: async function (req, res) {
-        try {
-            //Take Params
-            var equipment = new equipmentSchema();
-            var params = req.body;
-            equipment.equipmentCode = params.equipmentCode;
-            equipment.actualAssesmentCode = params.actualAssesmentCode;
-            equipment.oldAssesmentCode = params.oldAssesmentCode;
-            equipment.equipmentNumber = params.equipmentNumber;
-            equipment.model = params.model;
-            equipment.category = params.category;
-            equipment.description = params.description;
-            //equipment.status = params.status;
+        // Declare equipment and form instance
+        const form = new formidable.IncomingForm();
 
-            //Check if the equipment already exists
-            const existingEquipment = await equipmentSchema.findOne({
-                $or: [
-                    { actualAssesmentCode: equipment.actualAssesmentCode },
-                    { oldAssesmentCode: equipment.oldAssesmentCode },
-                ]
-            });
-            if (existingEquipment) {
-                return res.status(409).send({
-                    message: 'Equipment already exists',
+        form.parse(req, async (err, fields, files) => {
+            try {
+
+                //Verify if all the photos from files are in the correct format
+                for (let i = 0; i < files.equipmentPictures.length; i++) {
+                    if (files.equipmentPictures[i].mimetype != 'image/jpeg' && files.equipmentPictures[i].mimetype != 'image/png' && files.equipmentPictures[i].mimetype != 'image/jpg') {
+                        return res.status(409).send({
+                            message: 'Image format not supported',
+                        });
+                    }
+                }
+
+                // Get the first element of each field (as only one is expected) 
+                // field code can change for an array of values
+                const params = {};
+                Object.keys(fields).forEach(key => {
+                    params[key] = fields[key][0];
                 });
-            }
 
-            //Generate the QR Code
-            equipment.qrCode = await qrCode.toString(equipment._id.toHexString(),
+                const { v4: uuidv4 } = require('uuid');
+        
+                // Save params in equipment object 
+                var equipment = new equipmentSchema();
+                equipment.equipmentId = uuidv4();
+                equipment.actualAssesmentCode = params.actualAssesmentCode;
+                equipment.oldAssesmentCode = params.oldAssesmentCode;
+                equipment.equipmentNumber = params.equipmentNumber;
+                equipment.model = params.model;
+                equipment.category = params.category;
+                equipment.description = params.description;
+                //equipment.status = params.status;
+        
+                //Check if the equipment already exists
+                const existingEquipment = await equipmentSchema.findOne({
+                    $or: [
+                        { actualAssesmentCode: equipment.actualAssesmentCode },
+                        { oldAssesmentCode: equipment.oldAssesmentCode },
+                    ]
+                });
+                if (existingEquipment) {
+                    return res.status(409).send({
+                        message: 'Equipment already exists',
+                    });
+                }
+
+                //Generate the QR Code
+                equipment.qrCode = qrCode.toString(equipment._id.toHexString(),
                 { type: 'svg', width: '200' },
                 function (err, code) {
                     if (err) return res.status(500).send({
                         message: 'Error generating QR Code',
                         error: err
                     });
-                    console.log(code)
                 });
 
-            //Save the equipment
-            await equipment.save();
-
-            return res.status(200).send({
-                message: 'Equipment added successfully',
-                equipment_id: equipment._id,
-            });
-        } catch (error) {
-            return res.status(500).send({
-                message: 'Error adding equipment',
-                error: error
-            });
-        }
-    },
-
-    // Add an image to an equipment
-    addImage: async function (req, res) {
-        try {
-            //Take Params
-            const equipmentId = req.params.id;
-            var fileName = "Imagen no subida";
-
-            if (req.files) {
-                var filePath = req.files.photo.path;
-                var file_split = filePath.split('\\');
-                var fileName = file_split[2];
-                var extSplit = fileName.split('\.');
-                var fileExt = extSplit[1];
-                if (fileExt == 'png' || fileExt == 'jpg' || fileExt == 'jpeg' || fileExt == 'gif') {
-                    const existingEquipment = await equipmentSchema.findById(equipmentId);
-                    const oldImageFileName = existingEquipment.photo;
-                    console.log("oldimage:"+oldImageFileName);
-
-                    //Check if the equipment already exists
-                    if (!existingEquipment) {
-                        return res.status(409).send({
-                            message: 'Equipment does not exists',
-                        });
-                    }
-
-                    //Delete the old image
-                    if (oldImageFileName != "") {
-                        await fs.unlink('./src/images/' + oldImageFileName);
-                    }
-
-                    //Save the new image
-                    await equipmentSchema.updateOne({ _id: equipmentId }, {
-                        $set: {
-                            photo: fileName,
-                        }
-                    });
-                    return res.status(200).send({
-                        message: 'Image added successfully',
-                    });
-                } else {
-                    fs.unlink(filePath, (err) => {
-                        return res.status(200).send({
-                            message: 'Extension not valid',
-                            error: err
-                        });
+                //Read all the images files ans save it as a base64 string each one into the array photos in equipment
+                equipment.photos = [];
+                for (let i = 0; i < files.equipmentPictures.length; i++) {
+                    const imageBuffer = await fs.readFile(files.equipmentPictures[i].filepath);
+                    const imageBase64 = imageBuffer.toString('base64');
+                    equipment.photos.push({
+                        photo: imageBase64,
+                        name: files.equipmentPictures[i].originalFilename,
+                        type: files.equipmentPictures[i].mimetype,
                     });
                 }
 
-            } else {
-                return res.status(200).send({ message: fileName });
+                //Save the equipment
+                await equipment.save();
+
+                //Finish the request
+                return res.status(200).send({
+                    message: 'Equipment added successfully'
+                });
+            } catch (error) {
+                console.log(error);
+                return res.status(500).send({
+                    message: 'Error adding equipment',
+                    error: error
+                });
             }
-        } catch (error) {
-            return res.status(500).send({
-                message: 'Error adding image',
-                error: error,
-            });
-        }
-    },
-
-    // Get an image from an equipment
-    getImage: async function (req, res) {
-        try {
-            //Take Params
-            const imageFile = req.params.imageFile;
-            const pathFile = './src/images/' + imageFile;
-            const stats = await fs.stat(pathFile);
-
-            //Check if the image exists
-            if (stats.isFile()) {
-                return res.sendFile(path.resolve(pathFile));
-            } else {
-                res.status(409).send({ message: "Image does not exists" })
-            }
-
-        } catch (error) {
-            return res.status(500).send({
-                message: 'Error getting image',
-                error: error
-            });
-        }
+        });
     },
 
     // Get an equipment by id
@@ -148,15 +103,66 @@ var equipmentController = {
             const equipmentId = req.params.id;
 
             //Check if the equipment already exists
-            const existingEquipment = await equipmentSchema.findById(equipmentId);
+            const existingEquipment = await equipmentSchema.findOne({ equipmentId: equipmentId });
             if (!existingEquipment) {
                 return res.status(409).send({
                     message: 'Equipment does not exists',
                 });
             }
+
+            // Remove the photo from the equipment object query
+            const {_id, ...existingEquipmentWithoutId } = existingEquipment.toObject();
+            
+            // Remove photo information and type from each photo
+            const photosWithoutDetails = existingEquipmentWithoutId.photos.map(({ photo, type, _id, ...rest }) => rest);
+
             return res.status(200).send({
-                existingEquipment,
+                equipment: {
+                    ...existingEquipmentWithoutId,
+                    photos: photosWithoutDetails,
+                
+                },
             });
+        } catch (error) {
+            return res.status(500).send({
+                message: 'Error getting equipment',
+                error: error
+            });
+        }
+    },
+
+    // Get an equipment photo by id
+    getEquipmentPhoto: async function (req, res) {
+        try {
+            //Take Params
+            const equipmentId = req.params.id;
+
+            //Take query
+            const photoName = req.query.name;
+
+            //Check if the equipment already exists
+            const existingEquipment = await equipmentSchema.findOne({ equipmentId: equipmentId });
+            if (!existingEquipment) {
+                return res.status(409).send({
+                    message: 'Equipment does not exists',
+                });
+            }
+
+            //Check if the photo exists
+            const existingPhoto = existingEquipment.photos.find(photo => photo.name == photoName);
+
+            if (!existingPhoto) {
+                return res.status(409).send({
+                    message: 'Photo does not exists',
+                });
+            }
+
+            //Decode the found image
+            const imageBuffer = Buffer.from(existingPhoto.photo, 'base64');
+
+            res.setHeader('Content-Type', existingPhoto.type);
+
+            return res.status(200).send(imageBuffer);
         } catch (error) {
             return res.status(500).send({
                 message: 'Error getting equipment',
@@ -170,10 +176,25 @@ var equipmentController = {
         try {
             //Get all equipments
             const equipments = await equipmentSchema.find({});
+
+            // Remove photos and equipment id from each equipment
+            const equipmentsWithoutDetails = equipments.map(equipment => {
+                const { _id, ...equipmentWithoutDetails } = equipment.toObject();
+            
+                // Take just the photo name from each photo in the equipment
+                const photosWithoutDetails = equipmentWithoutDetails.photos.map(({ photo, type, _id, ...rest }) => rest);
+
+                return {
+                    ...equipmentWithoutDetails,
+                    photos: photosWithoutDetails,
+                };
+            });
+
             return res.status(200).send({
-                equipments,
+                equipments: equipmentsWithoutDetails,
             });
         } catch (error) {
+            console.log(error);
             return res.status(500).send({
                 message: 'Error getting equipments',
                 error: error
@@ -181,56 +202,91 @@ var equipmentController = {
         }
     },
 
-    //Modify an equipment
     updateEquipment: async function (req, res) {
-        try {
-            //Take Params
-            var equipment = new equipmentSchema();
-            var params = req.body;
-            equipment.equipmentCode = params.equipmentCode;
-            equipment.actualAssesmentCode = params.actualAssesmentCode;
-            equipment.oldAssesmentCode = params.oldAssesmentCode;
-            equipment.equipmentNumber = params.equipmentNumber;
-            equipment.model = params.model;
-            equipment.category = params.category;
-            equipment.description = params.description;
-            equipment.status = params.status;
+        // Declare equipment and form instance
+        const form = new formidable.IncomingForm();
 
-            //Check if the equipment already exists
-            const existingEquipment = await equipmentSchema.findOne({
-                $or: [
-                    { actualAssesmentCode: equipment.actualAssesmentCode },
-                    { oldAssesmentCode: equipment.oldAssesmentCode },
-                ]
-            });
-            if (!existingEquipment) {
-                return res.status(409).send({
-                    message: 'Equipment does not exists',
+        form.parse(req, async (err, fields, files) => {
+            try {
+                //Verify if all the photos from files are in the correct format
+                for (let i = 0; i < files.equipmentPictures.length; i++) {
+                    if (files.equipmentPictures[i].mimetype != 'image/jpeg' && files.equipmentPictures[i].mimetype != 'image/png' && files.equipmentPictures[i].mimetype != 'image/jpg') {
+                        return res.status(409).send({
+                            message: 'Image format not supported',
+                        });
+                    }
+                }
+
+                // Get the first element of each field (as only one is expected) 
+                // field code can change for an array of values
+                const params = {};
+                Object.keys(fields).forEach(key => {
+                    params[key] = fields[key][0];
+                });
+
+                //Take equipmet id
+                var equipmentCode = req.params.id;
+        
+                //Check if the equipment exists
+                const existingEquipment = await equipmentSchema.findOne({equipmentId: equipmentCode});
+                if (!existingEquipment) {
+                    return res.status(409).send({
+                        message: 'Equipment does not exist',
+                    });
+                }
+
+                // Save params in equipment object 
+                
+                var updateQRCode = params.updateQRCode;
+                existingEquipment.actualAssesmentCode = params.actualAssesmentCode;
+                existingEquipment.oldAssesmentCode = params.oldAssesmentCode;
+                existingEquipment.equipmentNumber = params.equipmentNumber;
+                existingEquipment.model = params.model;
+                existingEquipment.category = params.category;
+                existingEquipment.description = params.description;
+                existingEquipment.status = params.status;
+
+                //Verifiy it needs to generate the qr code again
+                if(updateQRCode){
+                    //Generate the QR Code
+                    existingEquipment.qrCode = qrCode.toString(existingEquipment._id.toHexString(),
+                    { type: 'svg', width: '200' },
+                    function (err, code) {
+                        if (err) return res.status(500).send({
+                            message: 'Error generating QR Code',
+                            error: err
+                        });
+                    });
+                }
+                
+
+                //Read all the images files ans save it as a base64 string each one into the array photos in equipment
+                existingEquipment.photos = [];
+                for (let i = 0; i < files.equipmentPictures.length; i++) {
+                    const imageBuffer = await fs.readFile(files.equipmentPictures[i].filepath);
+                    const imageBase64 = imageBuffer.toString('base64');
+                    existingEquipment.photos.push({
+                        photo: imageBase64,
+                        name: files.equipmentPictures[i].originalFilename,
+                        type: files.equipmentPictures[i].mimetype,
+                    });
+                }
+
+                //Modify the equipment
+                await equipmentSchema.updateOne({ equipmentId: equipmentCode }, {
+                    $set: existingEquipment
+                });
+                return res.status(200).send({
+                    message: 'Equipment modified successfully'
+                });
+            } catch (error) {
+                console.log(error);
+                return res.status(500).send({
+                    message: 'Error adding equipment',
+                    error: error
                 });
             }
-
-            //Modify the equipment
-            await equipmentSchema.updateOne({ actualAssesmentCode: equipment.actualAssesmentCode }, {
-                $set: {
-                    equipmentCode: equipment.equipmentCode,
-                    equipmentNumber: equipment.equipmentNumber,
-                    model: equipment.model,
-                    category: equipment.category,
-                    //qrCode: equipment.qrCode,
-                    description: equipment.description,
-                    status: equipment.status,
-                }
-            });
-            return res.status(200).send({
-                message: 'Equipment modified successfully',
-                equipment_id: existingEquipment._id,
-            });
-        } catch (error) {
-            return res.status(500).send({
-                message: 'Error modifying equipment',
-                error: error
-            });
-        }
+        });
     },
 
     //Delete an equipment
@@ -242,19 +298,14 @@ var equipmentController = {
 
             //Check if the equipment already exists
             // and delete the equipment
-            const deletedEquipment = await equipmentSchema.findById(equipmentId);
+            const deletedEquipment = await equipmentSchema.findOne({ equipmentId: equipmentId});
             if (!deletedEquipment) {
                 return res.status(409).send({
                     message: 'Equipment does not exists',
                 });
             }
 
-            //Delete the image
-            if (deletedEquipment.photo != '') {
-                await fs.unlink('./src/images/' + deletedEquipment.photo);
-            }
-
-            await equipmentSchema.deleteOne({ _id: equipmentId });
+            await equipmentSchema.deleteOne({ equipmentId: equipmentId });
 
             return res.status(200).send({
                 message: 'Equipment deleted successfully',
@@ -263,7 +314,6 @@ var equipmentController = {
         } catch (error) {
             return res.status(500).send({
                 message: 'Error deleting equipment',
-                error: error
             });
         }
     }

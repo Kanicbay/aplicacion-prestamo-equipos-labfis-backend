@@ -14,10 +14,10 @@ server.use(bodyParser.urlencoded({extended: false}));
 server.use(bodyParser.json());
 
 server.use((req, res, next) => {
+    res.header('Content-Type','application/json');
     res.header('Access-Control-Allow-Origin','*');
     res.header('Access-Control-Allow-Headers','Authorization, X-API-KEY, X-Request-With, Content-Type,Accept, Access-Control-Allow, Request-Method')
     res.header('Access-Control-Allow-Methods','GET,POST,OPTIONS,PUT,DELETE');
-    res.header('Access-Control-Allow-Headers','*');
     res.header('Access-Control-Allow-Credentials','true');
     res.header('Allow','GET, POST, OPTIONS, PUT, DELETE');
     next();
@@ -27,4 +27,5 @@ server.use((req, res, next) => {
 server.use('/equipment', equipmentRoutes);
 server.use('/user', userRoutes);
 server.use('/equipmentLoan', equipmentLoanRoutes);
+
 module.exports = server;
