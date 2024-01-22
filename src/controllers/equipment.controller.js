@@ -30,8 +30,6 @@ var equipmentController = {
                 Object.keys(fields).forEach(key => {
                     params[key] = fields[key][0];
                 });
-
-                const { v4: uuidv4 } = require('uuid');
         
                 // Save params in equipment object 
                 var equipment = new equipmentSchema();
