@@ -50,16 +50,6 @@ var equipmentController = {
                     }
                 });
                 
-                /*
-                //Check if the equipment already exists
-                const existingEquipment = await equipmentSchema.findOne({
-                    $or: [
-                        { actualAssesmentCode: equipment.actualAssesmentCode },
-                        { oldAssesmentCode: equipment.oldAssesmentCode },
-                    ]
-                });
-                */
-
                 if (existingEquipment) {
                     return res.status(409).send({
                         message: 'Equipment already exists',
