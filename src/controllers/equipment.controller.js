@@ -34,14 +34,23 @@ var equipmentController = {
                 // Save params in equipment object 
                 var equipment = new equipmentSchema();
                 equipment.equipmentId = uuidv4();
-                equipment.actualAssesmentCode = params.actualAssesmentCode;
-                equipment.oldAssesmentCode = params.oldAssesmentCode;
                 equipment.equipmentNumber = params.equipmentNumber;
                 equipment.model = params.model;
                 equipment.category = params.category;
                 equipment.description = params.description;
-                //equipment.status = params.status;
+
+                //Save the assesment codes
+                params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
+                equipment.assesmentCodes = params.assesmentCodes;
         
+                //Check if the equipment already exists using assesmentCodes array
+                const existingEquipment = await equipmentSchema.findOne({
+                    'assesmentCodes.assesmentCode': {
+                        $in: params.assesmentCodes.map(item => item.assesmentCode)
+                    }
+                });
+                
+                /*
                 //Check if the equipment already exists
                 const existingEquipment = await equipmentSchema.findOne({
                     $or: [
@@ -49,6 +58,8 @@ var equipmentController = {
                         { oldAssesmentCode: equipment.oldAssesmentCode },
                     ]
                 });
+                */
+
                 if (existingEquipment) {
                     return res.status(409).send({
                         message: 'Equipment already exists',

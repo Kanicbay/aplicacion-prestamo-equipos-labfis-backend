@@ -8,6 +8,14 @@ var EquipmentSchema = Schema({
         required: true,
         unique: true,
     },
+    assesmentCodes: [{
+        assesmentCode: {
+            type: String,
+            required: false,
+            unique: true,
+        }
+    }],
+    /*
     actualAssesmentCode : {
         type: String,
         required: true,
@@ -18,6 +26,7 @@ var EquipmentSchema = Schema({
         required: false,
         unique: true,
     },
+    */
     equipmentNumber : {
         type: String,
         required: false, 
