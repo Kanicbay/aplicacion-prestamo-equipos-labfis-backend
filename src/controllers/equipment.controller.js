@@ -235,15 +235,16 @@ var equipmentController = {
                 }
 
                 // Save params in equipment object 
-                
                 var updateQRCode = params.updateQRCode;
-                existingEquipment.actualAssesmentCode = params.actualAssesmentCode;
-                existingEquipment.oldAssesmentCode = params.oldAssesmentCode;
                 existingEquipment.equipmentNumber = params.equipmentNumber;
                 existingEquipment.model = params.model;
                 existingEquipment.category = params.category;
                 existingEquipment.description = params.description;
                 existingEquipment.status = params.status;
+
+                //Save the assesment codes
+                params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
+                existingEquipment.assesmentCodes = params.assesmentCodes;
 
                 //Verifiy it needs to generate the qr code again
                 if(updateQRCode){
@@ -281,7 +282,7 @@ var equipmentController = {
             } catch (error) {
                 console.log(error);
                 return res.status(500).send({
-                    message: 'Error adding equipment',
+                    message: 'Error updating equipment',
                     error: error
                 });
             }
