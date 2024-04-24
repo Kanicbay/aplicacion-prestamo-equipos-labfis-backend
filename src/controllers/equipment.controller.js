@@ -34,21 +34,29 @@ var equipmentController = {
                 // Save params in equipment object 
                 var equipment = new equipmentSchema();
                 equipment.equipmentId = uuidv4();
-                equipment.equipmentNumber = params.equipmentNumber;
+                equipment.name = params.name;
+                equipment.category = params.category; 
+                equipment.subCategory = params.subCategory;
+                equipment.assesmentCode = params.assesmentCode;
+                equipment.previousCode = params.previousCode;
+                equipment.serialNumber = params.serialNumber;
                 equipment.model = params.model;
-                equipment.category = params.category;
                 equipment.description = params.description;
+                equipment.custodian = params.custodian;
+                equipment.equipmentNumber = params.equipmentNumber;
+                equipment.brand = params.brand;
 
                 //Save the assesment codes
-                params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
-                equipment.assesmentCodes = params.assesmentCodes;
+                /*params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
+                equipment.assesmentCodes = params.assesmentCodes;*/
         
                 //Check if the equipment already exists using assesmentCodes array
-                const existingEquipment = await equipmentSchema.findOne({
+                /*const existingEquipment = await equipmentSchema.findOne({
                     'assesmentCodes.assesmentCode': {
                         $in: params.assesmentCodes.map(item => item.assesmentCode)
                     }
-                });
+                });*/
+                const existingEquipment = await equipmentSchema.findOne({ equipmentId: equipment.equipmentId });
                 
                 if (existingEquipment) {
                     return res.status(409).send({
@@ -236,15 +244,22 @@ var equipmentController = {
 
                 // Save params in equipment object 
                 var updateQRCode = params.updateQRCode;
-                existingEquipment.equipmentNumber = params.equipmentNumber;
-                existingEquipment.model = params.model;
+                existingEquipment.name = params.name;
                 existingEquipment.category = params.category;
+                existingEquipment.subCategory = params.subCategory;
+                existingEquipment.assesmentCode = params.assesmentCode;
+                existingEquipment.previousCode = params.previousCode;
+                existingEquipment.serialNumber = params.serialNumber;
+                existingEquipment.model = params.model;
                 existingEquipment.description = params.description;
+                existingEquipment.custodian = params.custodian;
+                existingEquipment.equipmentNumber = params.equipmentNumber;
+                existingEquipment.brand = params.brand;
                 existingEquipment.status = params.status;
 
                 //Save the assesment codes
-                params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
-                existingEquipment.assesmentCodes = params.assesmentCodes;
+                /*params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
+                existingEquipment.assesmentCodes = params.assesmentCodes;*/
 
                 //Verifiy it needs to generate the qr code again
                 if(updateQRCode){

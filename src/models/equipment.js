@@ -8,26 +8,48 @@ var EquipmentSchema = Schema({
         required: true,
         unique: true,
     },
-    assesmentCodes: [{
-        _id: false,
-        assesmentCode: {
-            type: String,
-            required: false,
-            unique: true,
-        }
-    }],
-
-    equipmentNumber : {
-        type: String,
-        required: false, 
-    },
-    model : {
+    name: {
         type: String,
         required: true,
     },
-    category : {
+    category: {
         type: String,
         required: true,
+    },
+    subCategory: {
+        type: String,
+        required: true,
+    },
+    assesmentCode: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    previousCode: {
+        type: String,
+        required: false,
+        unique: true,
+    },
+    serialNumber: {
+        type: String,
+        required: false,
+        unique: true,
+    },
+    model: {
+        type: String,
+        required: false,
+    },
+    description: {
+        type: String,
+        required: true,
+    },
+    custodian: {
+        type: String,
+        required: true,
+    },
+    equipmentNumber: {
+        type: String,
+        required: false,
     },
     photos: [{
         _id: false,
@@ -44,9 +66,9 @@ var EquipmentSchema = Schema({
             required: true,
         },
     }],
-    description: {
+    brand: {
         type: String,
-        required: true,
+        required: false,
     },
     qrCode: {
         type: String,
