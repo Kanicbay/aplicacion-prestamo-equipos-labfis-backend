@@ -7,12 +7,59 @@ const { v4: uuidv4 } = require('uuid');
 const formidable = require('formidable');
 
 var equipmentController = {
-    
+
     addEquipment: async function (req, res) {
         // Declare equipment and form instance
         const form = new formidable.IncomingForm();
+        try {
+            var equipment = new equipmentSchema();
+            var params = req.body;
+            equipment.equipmentId = uuidv4();
+            equipment.name = params.name;
+            equipment.category = params.category;
+            equipment.subCategory = params.subCategory;
+            equipment.assesmentCode = params.assesmentCode;
+            equipment.previousCode = params.previousCode;
+            equipment.serialNumber = params.serialNumber;
+            equipment.model = params.model;
+            equipment.description = params.description;
+            equipment.custodian = params.custodian;
+            equipment.equipmentNumber = params.equipmentNumber;
+            equipment.brand = params.brand;
 
-        form.parse(req, async (err, fields, files) => {
+            const existingEquipment = await equipmentSchema.findOne({ equipmentId: equipment.equipmentId });
+
+            if (existingEquipment) {
+                return res.status(409).send({
+                    message: 'Equipment already exists',
+                });
+            }
+
+            //Generate the QR Code
+            equipment.qrCode = qrCode.toString(equipment._id.toHexString(),
+                { type: 'svg', width: '200' },
+                function (err, code) {
+                    if (err) return res.status(500).send({
+                        message: 'Error generating QR Code',
+                        error: err
+                    });
+                });
+
+            await equipment.save();
+
+            //Finish the request
+            return res.status(200).send({
+                message: 'Equipment added successfully'
+            });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send({
+                message: 'Error adding equipment',
+                error: error
+            });
+        }
+
+        /*form.parse(req, async (err, fields, files) => {
             try {
 
                 //Verify if all the photos from files are in the correct format
@@ -30,12 +77,12 @@ var equipmentController = {
                 Object.keys(fields).forEach(key => {
                     params[key] = fields[key][0];
                 });
-        
+
                 // Save params in equipment object 
                 var equipment = new equipmentSchema();
                 equipment.equipmentId = uuidv4();
                 equipment.name = params.name;
-                equipment.category = params.category; 
+                equipment.category = params.category;
                 equipment.subCategory = params.subCategory;
                 equipment.assesmentCode = params.assesmentCode;
                 equipment.previousCode = params.previousCode;
@@ -44,63 +91,63 @@ var equipmentController = {
                 equipment.description = params.description;
                 equipment.custodian = params.custodian;
                 equipment.equipmentNumber = params.equipmentNumber;
-                equipment.brand = params.brand;
+                equipment.brand = params.brand;*/
 
-                //Save the assesment codes
-                /*params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
-                equipment.assesmentCodes = params.assesmentCodes;*/
-        
-                //Check if the equipment already exists using assesmentCodes array
-                /*const existingEquipment = await equipmentSchema.findOne({
-                    'assesmentCodes.assesmentCode': {
-                        $in: params.assesmentCodes.map(item => item.assesmentCode)
-                    }
-                });*/
-                const existingEquipment = await equipmentSchema.findOne({ equipmentId: equipment.equipmentId });
-                
-                if (existingEquipment) {
-                    return res.status(409).send({
-                        message: 'Equipment already exists',
-                    });
-                }
+        //Save the assesment codes
+        /*params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
+        equipment.assesmentCodes = params.assesmentCodes;*/
 
-                //Generate the QR Code
-                equipment.qrCode = qrCode.toString(equipment._id.toHexString(),
-                { type: 'svg', width: '200' },
-                function (err, code) {
-                    if (err) return res.status(500).send({
-                        message: 'Error generating QR Code',
-                        error: err
-                    });
-                });
-
-                //Read all the images files ans save it as a base64 string each one into the array photos in equipment
-                equipment.photos = [];
-                for (let i = 0; i < files.equipmentPictures.length; i++) {
-                    const imageBuffer = await fs.readFile(files.equipmentPictures[i].filepath);
-                    const imageBase64 = imageBuffer.toString('base64');
-                    equipment.photos.push({
-                        photo: imageBase64,
-                        name: files.equipmentPictures[i].originalFilename,
-                        type: files.equipmentPictures[i].mimetype,
-                    });
-                }
-
-                //Save the equipment
-                await equipment.save();
-
-                //Finish the request
-                return res.status(200).send({
-                    message: 'Equipment added successfully'
-                });
-            } catch (error) {
-                console.log(error);
-                return res.status(500).send({
-                    message: 'Error adding equipment',
-                    error: error
-                });
+        //Check if the equipment already exists using assesmentCodes array
+        /*const existingEquipment = await equipmentSchema.findOne({
+            'assesmentCodes.assesmentCode': {
+                $in: params.assesmentCodes.map(item => item.assesmentCode)
             }
+        });*//*
+        const existingEquipment = await equipmentSchema.findOne({ equipmentId: equipment.equipmentId });
+
+        if (existingEquipment) {
+            return res.status(409).send({
+                message: 'Equipment already exists',
+            });
+        }
+
+        //Generate the QR Code
+        equipment.qrCode = qrCode.toString(equipment._id.toHexString(),
+            { type: 'svg', width: '200' },
+            function (err, code) {
+                if (err) return res.status(500).send({
+                    message: 'Error generating QR Code',
+                    error: err
+                });
+            });
+
+        //Read all the images files ans save it as a base64 string each one into the array photos in equipment
+        equipment.photos = [];
+        for (let i = 0; i < files.equipmentPictures.length; i++) {
+            const imageBuffer = await fs.readFile(files.equipmentPictures[i].filepath);
+            const imageBase64 = imageBuffer.toString('base64');
+            equipment.photos.push({
+                photo: imageBase64,
+                name: files.equipmentPictures[i].originalFilename,
+                type: files.equipmentPictures[i].mimetype,
+            });
+        }
+
+        //Save the equipment
+        await equipment.save();
+
+        //Finish the request
+        return res.status(200).send({
+            message: 'Equipment added successfully'
         });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).send({
+            message: 'Error adding equipment',
+            error: error
+        });
+    }
+});*/
     },
 
     // Get an equipment by id
@@ -118,8 +165,8 @@ var equipmentController = {
             }
 
             // Remove the photo from the equipment object query
-            const {_id, ...existingEquipmentWithoutId } = existingEquipment.toObject();
-            
+            const { _id, ...existingEquipmentWithoutId } = existingEquipment.toObject();
+
             // Remove photo information and type from each photo
             const photosWithoutDetails = existingEquipmentWithoutId.photos.map(({ photo, type, _id, ...rest }) => rest);
 
@@ -127,7 +174,7 @@ var equipmentController = {
                 equipment: {
                     ...existingEquipmentWithoutId,
                     photos: photosWithoutDetails,
-                
+
                 },
             });
         } catch (error) {
@@ -187,7 +234,7 @@ var equipmentController = {
             // Remove photos and equipment id from each equipment
             const equipmentsWithoutDetails = equipments.map(equipment => {
                 const { _id, ...equipmentWithoutDetails } = equipment.toObject();
-            
+
                 // Take just the photo name from each photo in the equipment
                 const photosWithoutDetails = equipmentWithoutDetails.photos.map(({ photo, type, _id, ...rest }) => rest);
 
@@ -212,8 +259,62 @@ var equipmentController = {
     updateEquipment: async function (req, res) {
         // Declare equipment and form instance
         const form = new formidable.IncomingForm();
+        try {
+            //Take equipmet id
+            var equipmentCode = req.params.id;
+            var params = req.body;
 
-        form.parse(req, async (err, fields, files) => {
+            //Check if the equipment exists
+            const existingEquipment = await equipmentSchema.findOne({ equipmentId: equipmentCode });
+            if (!existingEquipment) {
+                return res.status(409).send({
+                    message: 'Equipment does not exist',
+                });
+            }
+
+            // Save params in equipment object 
+            var updateQRCode = params.updateQRCode;
+            existingEquipment.name = params.name;
+            existingEquipment.category = params.category;
+            existingEquipment.subCategory = params.subCategory;
+            existingEquipment.assesmentCode = params.assesmentCode;
+            existingEquipment.previousCode = params.previousCode;
+            existingEquipment.serialNumber = params.serialNumber;
+            existingEquipment.model = params.model;
+            existingEquipment.description = params.description;
+            existingEquipment.custodian = params.custodian;
+            existingEquipment.equipmentNumber = params.equipmentNumber;
+            existingEquipment.brand = params.brand;
+            existingEquipment.status = params.status;
+
+            //Verifiy it needs to generate the qr code again
+            if (updateQRCode) {
+                //Generate the QR Code
+                existingEquipment.qrCode = qrCode.toString(existingEquipment._id.toHexString(),
+                    { type: 'svg', width: '200' },
+                    function (err, code) {
+                        if (err) return res.status(500).send({
+                            message: 'Error generating QR Code',
+                            error: err
+                        });
+                    });
+            }
+
+            //Modify the equipment
+            await equipmentSchema.updateOne({ equipmentId: equipmentCode }, {
+                $set: existingEquipment
+            });
+            return res.status(200).send({
+                message: 'Equipment modified successfully'
+            });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send({
+                message: 'Error updating equipment',
+                error: error
+            });
+        }
+        /*form.parse(req, async (err, fields, files) => {
             try {
                 //Verify if all the photos from files are in the correct format
                 for (let i = 0; i < files.equipmentPictures.length; i++) {
@@ -233,9 +334,9 @@ var equipmentController = {
 
                 //Take equipmet id
                 var equipmentCode = req.params.id;
-        
+
                 //Check if the equipment exists
-                const existingEquipment = await equipmentSchema.findOne({equipmentId: equipmentCode});
+                const existingEquipment = await equipmentSchema.findOne({ equipmentId: equipmentCode });
                 if (!existingEquipment) {
                     return res.status(409).send({
                         message: 'Equipment does not exist',
@@ -255,25 +356,25 @@ var equipmentController = {
                 existingEquipment.custodian = params.custodian;
                 existingEquipment.equipmentNumber = params.equipmentNumber;
                 existingEquipment.brand = params.brand;
-                existingEquipment.status = params.status;
+                existingEquipment.status = params.status;*/
 
                 //Save the assesment codes
                 /*params.assesmentCodes = params.assesmentCodes.split(',').map(codigo => ({ assesmentCode: codigo.trim() }));
                 existingEquipment.assesmentCodes = params.assesmentCodes;*/
 
                 //Verifiy it needs to generate the qr code again
-                if(updateQRCode){
+                /*if (updateQRCode) {
                     //Generate the QR Code
                     existingEquipment.qrCode = qrCode.toString(existingEquipment._id.toHexString(),
-                    { type: 'svg', width: '200' },
-                    function (err, code) {
-                        if (err) return res.status(500).send({
-                            message: 'Error generating QR Code',
-                            error: err
+                        { type: 'svg', width: '200' },
+                        function (err, code) {
+                            if (err) return res.status(500).send({
+                                message: 'Error generating QR Code',
+                                error: err
+                            });
                         });
-                    });
                 }
-                
+
 
                 //Read all the images files ans save it as a base64 string each one into the array photos in equipment
                 existingEquipment.photos = [];
@@ -301,7 +402,7 @@ var equipmentController = {
                     error: error
                 });
             }
-        });
+        });*/
     },
 
     //Delete an equipment
@@ -313,7 +414,7 @@ var equipmentController = {
 
             //Check if the equipment already exists
             // and delete the equipment
-            const deletedEquipment = await equipmentSchema.findOne({ equipmentId: equipmentId});
+            const deletedEquipment = await equipmentSchema.findOne({ equipmentId: equipmentId });
             if (!deletedEquipment) {
                 return res.status(409).send({
                     message: 'Equipment does not exists',

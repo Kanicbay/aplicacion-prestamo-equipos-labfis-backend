@@ -28,7 +28,7 @@ var EquipmentSchema = Schema({
     previousCode: {
         type: String,
         required: false,
-        unique: true,
+        //unique: this.previousCode === "" ? false : true,
     },
     serialNumber: {
         type: String,
@@ -55,15 +55,15 @@ var EquipmentSchema = Schema({
         _id: false,
         photo: {
             type: String,
-            required: true,
+            required: false,
         },
         name: {
             type: String,
-            required: true,
+            required: false,
         },
         type: {
             type: String,
-            required: true,
+            required: false,
         },
     }],
     brand: {
@@ -74,6 +74,7 @@ var EquipmentSchema = Schema({
         type: String,
         required: false,
         default: '',
+        unique: true,
     },
     status: {
         type: String,
