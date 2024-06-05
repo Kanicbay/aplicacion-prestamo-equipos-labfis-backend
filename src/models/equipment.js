@@ -23,17 +23,18 @@ var EquipmentSchema = Schema({
     assesmentCode: {
         type: String,
         required: true,
-        unique: true,
+        //unique: true,
     },
     previousCode: {
         type: String,
         required: false,
+        default: '',
         //unique: this.previousCode === "" ? false : true,
     },
     serialNumber: {
         type: String,
         required: false,
-        unique: true,
+        unique: this.serialNumber === "" ? false : true,
     },
     model: {
         type: String,
@@ -78,7 +79,7 @@ var EquipmentSchema = Schema({
     },
     status: {
         type: String,
-        default: 'available',
+        default: 'disponible',
     },
 });
 
